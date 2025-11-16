@@ -1,9 +1,8 @@
-name: PR Notification to Feishu
+name: Push Notification to Feishu
 
 on:
-  pull_request:
-    branches: [ main ]
-    types: [opened, reopened, synchronize]
+  push:
+    branches: [ 'main' ]
 
 jobs:
   notify:
@@ -25,7 +24,7 @@ jobs:
             const stringToSign = `${timestamp}\n${secret}`;
             const sign = crypto.createHmac('sha256', stringToSign).digest('base64');
             
-            console.log('Preparing PR notification payload');
+            console.log('Preparing Push notification payload');
             
             // 构建消息内容
             const payload = {
@@ -39,66 +38,69 @@ jobs:
                 header: {
                   title: {
                     tag: "plain_text",
-                    content: "(ᗜᴗᗜ)收到新的PR请求"
+                    content: "∠(◠ڼ◠)⌒Dev分支有新的Push"
                   },
-                  template: "blue"
+                  template: "green"
                 },
                 elements: [
                   {
                     tag: "div",
                     text: {
                       tag: "lark_md",
-                      content: `**PR标题**: ${context.payload.pull_request.title}`
+                      content: `**提交人**: ${context.payload.pusher.name}`
                     }
                   },
                   {
                     tag: "div",
                     text: {
                       tag: "lark_md",
-                      content: `**创建者**: ${context.payload.pull_request.user.login}`
+                      content: `**分支**: ${context.ref.replace('refs/heads/', '')}`
                     }
-                  },
-                  {
-                    tag: "div",
-                    text: {
-                      tag: "lark_md",
-                      content: `**目标分支**: ${context.payload.pull_request.base.ref}`
-                    }
-                  },
-                  {
-                    tag: "div",
-                    text: {
-                      tag: "lark_md",
-                      content: `**源分支**: ${context.payload.pull_request.head.ref}`
-                    }
-                  },
-                  {
-                    tag: "div",
-                    text: {
-                      tag: "lark_md",
-                      content: `**状态**: ${context.payload.pull_request.state}`
-                    }
-                  },
-                  {
-                    tag: "action",
-                    actions: [
-                      {
-                        tag: "button",
-                        text: {
-                          tag: "plain_text",
-                          content: "查看PR详情"
-                        },
-                        url: context.payload.pull_request.html_url,
-                        type: "primary"
-                      }
-                    ]
                   }
                 ]
               }
             };
             
+            // 获取提交信息
+            const commits = context.payload.commits;
+            if (commits && commits.length > 0) {
+              let commitMessages = '';
+              const maxCommits = Math.min(5, commits.length);
+              
+              for (let i = 0; i < maxCommits; i++) {
+                commitMessages += `• ${commits[i].message} (${commits[i].id.substring(0, 7)})\n`;
+              }
+              
+              if (commits.length > maxCommits) {
+                commitMessages += `...以及其他 ${commits.length - maxCommits} 个提交\n`;
+              }
+              
+              payload.card.elements.push({
+                tag: "div",
+                text: {
+                  tag: "lark_md",
+                  content: `**提交信息**:\n${commitMessages}`
+                }
+              });
+            }
+            
+            payload.card.elements.push({
+              tag: "action",
+              actions: [
+                {
+                  tag: "button",
+                  text: {
+                    tag: "plain_text",
+                    content: "查看详情"
+                  },
+                  url: `${context.payload.repository.html_url}/commit/${context.payload.after}`,
+                  type: "primary"
+                }
+              ]
+            });
+            
             try {
-              console.log('Sending PR notification to Feishu');
+              console.log('Sending Push notification to Feishu');
               
               // 修正请求方式，按照示例代码
               const postData = JSON.stringify(payload);
