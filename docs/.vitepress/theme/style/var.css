@@ -1,0 +1,24 @@
+:root {
+    --vp-c-brand-1: #18794e;
+    --vp-c-brand-2: #299764;
+    --vp-c-brand-3: #30a46c;
+}
+
+.dark {
+    --vp-c-brand-1: #3dd68c;
+    --vp-c-brand-2: #30a46c;
+    --vp-c-brand-3: #298459;
+}
+
+:root {
+    /* hero标题渐变色 */
+    --vp-home-hero-name-color: transparent;
+    --vp-home-hero-name-background: -webkit-linear-gradient(120deg, #3dd68c, #298459);
+
+    /*hero logo背景渐变色 */
+    --vp-home-hero-image-background-image: linear-gradient(-45deg, #3dd68c 50%, #298459 50%);
+    --vp-home-hero-image-filter: blur(50px);
+
+    /*hero text字体大小*/
+    --vp-home-hero-text-font-size: 1rem;
+}

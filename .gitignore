@@ -1,0 +1,42 @@
+# 依赖
+node_modules/
+
+# 打包
+**/cache/
+**/dist/
+
+# 系统文件
+**/.DS_Store
+Thumbs.db
+
+# IDE/编辑器文件
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 日志文件
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# 环境变量文件
+.env
+.env.local
+.env.*.local
+
+# VitePress特定文件
+.vitepress/cache/
+.vitepress/dist/
+
+# 测试覆盖率
+coverage/
+*.lcov
+
+# 构建输出
+build/
+out/
