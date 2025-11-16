@@ -23,11 +23,12 @@ jobs:
         run: npm run docs:build
       
       - name: 部署到服务器
-        uses: appleboy/scp-action@v0.1.4
+        uses: appleboy/scp-action@v1
         with:
           host: ${{ secrets.SSH_HOST }}
-          port: ${{ secrets.SSH_PORT}}
           username: ${{ secrets.SSH_USER }}
           password: ${{ secrets.SSH_KEY }}
           source: "docs/.vitepress/dist/*"
           target: ${{ secrets.SSH_REMOTE_PATH }}
+          overwrite: true
+          strip_components: 3
