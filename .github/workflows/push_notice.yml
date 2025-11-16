@@ -38,7 +38,7 @@ jobs:
                 header: {
                   title: {
                     tag: "plain_text",
-                    content: "🚀 Dev分支有新的Push"
+                    content: "∠(◠ڼ◠)⌒Dev分支有新的Push"
                   },
                   template: "green"
                 },

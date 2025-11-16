@@ -39,7 +39,7 @@ jobs:
                 header: {
                   title: {
                     tag: "plain_text",
-                    content: "(ᗜᴗᗜ)收到新的PR请求～(∠◠ڼ◠)⌒☆"
+                    content: "(ᗜᴗᗜ)收到新的PR请求"
                   },
                   template: "blue"
                 },

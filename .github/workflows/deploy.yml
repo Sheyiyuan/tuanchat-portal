@@ -32,3 +32,249 @@ jobs:
           target: ${{ secrets.SSH_REMOTE_PATH }}
           overwrite: true
           strip_components: 3
+      
+      - name: 部署成功通知
+        if: success()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const crypto = require('crypto');
+            const https = require('https');
+            
+            // 飞书机器人的webhook ID (从URL中提取)
+            const webhookId = '${{ secrets.FEISHU_WEBHOOK_ID }}';
+            const secret = '${{ secrets.FEISHU_SECRET }}';
+            
+            // 计算签名 - 修正为飞书API要求的格式
+            const timestamp = Math.floor(Date.now() / 1000);
+            const stringToSign = `${timestamp}\n${secret}`;
+            const sign = crypto.createHmac('sha256', stringToSign).digest('base64');
+            
+            console.log('Preparing Deploy Success notification payload');
+            
+            // 构建消息内容
+            const payload = {
+              timestamp: String(timestamp), // 转为字符串
+              sign: sign,
+              msg_type: "interactive",
+              card: {
+                config: {
+                  wide_screen_mode: true
+                },
+                header: {
+                  title: {
+                    tag: "plain_text",
+                    content: "✅ 部署成功 (∠・ω< )⌒☆"
+                  },
+                  template: "green"
+                },
+                elements: [
+                  {
+                    tag: "div",
+                    text: {
+                      tag: "lark_md",
+                      content: `**部署分支**: ${context.ref.replace('refs/heads/', '')}`
+                    }
+                  },
+                  {
+                    tag: "div",
+                    text: {
+                      tag: "lark_md",
+                      content: `**部署提交**: ${context.sha.substring(0, 7)}`
+                    }
+                  },
+                  {
+                    tag: "div",
+                    text: {
+                      tag: "lark_md",
+                      content: `**提交信息**: ${context.payload.head_commit.message}`
+                    }
+                  },
+                  {
+                    tag: "action",
+                    actions: [
+                      {
+                        tag: "button",
+                        text: {
+                          tag: "plain_text",
+                          content: "查看部署详情"
+                        },
+                        url: `${context.payload.repository.html_url}/commit/${context.sha}`,
+                        type: "primary"
+                      }
+                    ]
+                  }
+                ]
+              }
+            };
+            
+            try {
+              console.log('Sending Deploy Success notification to Feishu');
+              
+              // 修正请求方式，按照示例代码
+              const postData = JSON.stringify(payload);
+              
+              return new Promise((resolve, reject) => {
+                const req = https.request({
+                  hostname: 'open.feishu.cn',
+                  port: 443,
+                  path: `/open-apis/bot/v2/hook/${webhookId}`,
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Content-Length': Buffer.byteLength(postData)
+                  }
+                }, (res) => {
+                  let data = '';
+                  res.on('data', (chunk) => {
+                    data += chunk;
+                    process.stdout.write(chunk); // 直接输出响应数据
+                  });
+                  
+                  res.on('end', () => {
+                    console.log(`Feishu API response status: ${res.statusCode}`);
+                    console.log(`Feishu API response body: ${data}`);
+                    
+                    if (res.statusCode !== 200) {
+                      return reject(new Error(`Feishu API responded with status: ${res.statusCode}`));
+                    }
+                    console.log('Feishu notification sent successfully');
+                    resolve(data);
+                  });
+                });
+                
+                req.on('error', (error) => {
+                  console.error('Failed to send Feishu notification:', error.message);
+                  reject(error);
+                });
+                
+                req.write(postData);
+                req.end();
+              });
+            } catch (error) {
+              console.error('Failed to send Feishu notification:', error.message);
+              throw error;
+            }
+      
+      - name: 部署失败通知
+        if: failure()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const crypto = require('crypto');
+            const https = require('https');
+            
+            // 飞书机器人的webhook ID (从URL中提取)
+            const webhookId = '${{ secrets.FEISHU_WEBHOOK_ID }}';
+            const secret = '${{ secrets.FEISHU_SECRET }}';
+            
+            // 计算签名 - 修正为飞书API要求的格式
+            const timestamp = Math.floor(Date.now() / 1000);
+            const stringToSign = `${timestamp}\n${secret}`;
+            const sign = crypto.createHmac('sha256', stringToSign).digest('base64');
+            
+            console.log('Preparing Deploy Failure notification payload');
+            
+            // 构建消息内容
+            const payload = {
+              timestamp: String(timestamp), // 转为字符串
+              sign: sign,
+              msg_type: "interactive",
+              card: {
+                config: {
+                  wide_screen_mode: true
+                },
+                header: {
+                  title: {
+                    tag: "plain_text",
+                    content: "❌ 部署失败 \(>_<)/~"
+                  },
+                  template: "red"
+                },
+                elements: [
+                  {
+                    tag: "div",
+                    text: {
+                      tag: "lark_md",
+                      content: `**部署分支**: ${context.ref.replace('refs/heads/', '')}`
+                    }
+                  },
+                  {
+                    tag: "div",
+                    text: {
+                      tag: "lark_md",
+                      content: `**部署提交**: ${context.sha.substring(0, 7)}`
+                    }
+                  },
+                  {
+                    tag: "div",
+                    text: {
+                      tag: "lark_md",
+                      content: `**提交信息**: ${context.payload.head_commit.message}`
+                    }
+                  },
+                  {
+                    tag: "action",
+                    actions: [
+                      {
+                        tag: "button",
+                        text: {
+                          tag: "plain_text",
+                          content: "查看错误详情"
+                        },
+                        url: `${context.payload.repository.html_url}/actions/runs/${process.env.GITHUB_RUN_ID}`,
+                        type: "danger"
+                      }
+                    ]
+                  }
+                ]
+              }
+            };
+            
+            try {
+              console.log('Sending Deploy Failure notification to Feishu');
+              
+              // 修正请求方式，按照示例代码
+              const postData = JSON.stringify(payload);
+              
+              return new Promise((resolve, reject) => {
+                const req = https.request({
+                  hostname: 'open.feishu.cn',
+                  port: 443,
+                  path: `/open-apis/bot/v2/hook/${webhookId}`,
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Content-Length': Buffer.byteLength(postData)
+                  }
+                }, (res) => {
+                  let data = '';
+                  res.on('data', (chunk) => {
+                    data += chunk;
+                    process.stdout.write(chunk); // 直接输出响应数据
+                  });
+                  
+                  res.on('end', () => {
+                    console.log(`Feishu API response status: ${res.statusCode}`);
+                    console.log(`Feishu API response body: ${data}`);
+                    
+                    if (res.statusCode !== 200) {
+                      return reject(new Error(`Feishu API responded with status: ${res.statusCode}`));
+                    }
+                    console.log('Feishu notification sent successfully');
+                    resolve(data);
+                  });
+                });
+                
+                req.on('error', (error) => {
+                  console.error('Failed to send Feishu notification:', error.message);
+                  reject(error);
+                });
+                
+                req.write(postData);
+                req.end();
+              });
+            } catch (error) {
+              console.error('Failed to send Feishu notification:', error.message);
+              throw error;
+            }
