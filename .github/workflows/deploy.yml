@@ -11,17 +11,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 读取仓库内容
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+      
+      - name: 设置 Node.js 环境
+        uses: actions/setup-node@v3
+      
       - name: 安装依赖
         run: npm install
+      
       - name: 构建项目
         run: npm run docs:build
+      
       - name: 部署到服务器
         uses: appleboy/scp-action@v0.1.4
         with:
           host: ${{ secrets.SSH_HOST }}
-          port: ${{ secrets.SSH_PORT }}
+          port: ${{ secrets.SSH_PORT}}
           username: ${{ secrets.SSH_USER }}
-          password: ${{ secrets.SSH_PASSWORD }}
-          source: "dist/*"
+          password: ${{ secrets.SSH_KEY }}
+          source: "docs/.vitepress/dist/*"
           target: ${{ secrets.SSH_REMOTE_PATH }}
